@@ -1,0 +1,13 @@
+{
+  "welcome": "Добро пожаловать",
+  "welcomeSubtitle": "Мы поможем вам найти ответы на юридические вопросы",
+  "startButton": "Начать",
+  "selectLanguage": "Выберите язык",
+  "back": "Назад",
+  "home": "Главная",
+  "step": "Шаг",
+  "navigationBack": "Назад",
+  "navigationExit": "Выход",
+  "searchQuestions": "Поиск по вопросам...",
+  "noSearchResults": "Ничего не найдено"
+}

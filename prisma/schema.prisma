@@ -1,0 +1,131 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Audit
+  createdBy  String?
+  updatedBy  String?
+
+  // Relations
+  translations CategoryTranslation[]
+  questions    Question[]
+}
+
+model CategoryTranslation {
+  id         String @id @default(uuid())
+  categoryId String
+  language   String // "az", "en", "ru"
+  name       String
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, language])
+}
+
+model Question {
+  id         String   @id @default(uuid())
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  // Audit
+  createdBy  String?
+  updatedBy  String?
+  
+  // Hierarchy
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  parentId   String?
+  parent     Question? @relation("SubQuestions", fields: [parentId], references: [id], onDelete: Cascade)
+  subQuestions Question[] @relation("SubQuestions")
+
+  // Content
+  translations QuestionTranslation[]
+}
+
+model QuestionTranslation {
+  id         String @id @default(uuid())
+  questionId String
+  language   String // "az", "en", "ru"
+  question   String
+  answer     String? // Markdown supported
+  attachmentUrl String? // URL to uploaded file (PDF, Doc, Image)
+  attachmentName String? // Display name of the file
+
+
+  parentQuestion Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, language])
+}
+
+model User {
+  id        String   @id @default(uuid())
+  telegramId String? @unique
+  firstName String?  // Telegram First Name
+  lastName  String?  // Telegram Last Name
+  username  String?  // Telegram Username
+  region    String?  // Stores City (e.g. Baku)
+  language  String?  // Stores Language (e.g. az, ru)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sessions  Session[]
+  events    AnalyticsEvent[]
+
+  @@index([createdAt])
+  @@index([region])
+  @@index([language])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String?
+  startTime DateTime @default(now())
+  endTime   DateTime?
+  user      User?    @relation(fields: [userId], references: [id])
+  events    AnalyticsEvent[]
+
+  @@index([startTime])
+  @@index([userId])
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(uuid())
+  sessionId String
+  eventType String // e.g., "view_category", "emergency_exit"
+  metadata  Json?    // e.g., { categoryId: "...", questionId: "..." }
+  createdAt DateTime @default(now())
+  
+  session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  userId    String?
+  user      User?   @relation(fields: [userId], references: [id])
+
+  @@index([eventType, createdAt])
+  @@index([createdAt])
+  @@index([sessionId])
+  @@index([userId])
+}
+
+model AdminUser {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // hashed
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
